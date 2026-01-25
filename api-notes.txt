@@ -1,0 +1,343 @@
+ -- github API 
+
+---- business metrics from issues fact and dimensions:: 
+
+
+For an open-source repo like Great Expectations, issues represent:
+
+📥 User demand (bugs, questions, feature requests)
+⚠️ Product quality signals
+🧑‍💻 Community engagement
+🧰 Support & maintenance workload
+🔁 Feedback loop from users to maintainers
+
+
+A) Issue inflow & demand
+
+How many issues are being created over time?
+Is issue volume increasing or decreasing?
+Are certain periods unusually noisy?
+
+Metrics
+
+Issues created per day / week / month
+Open vs closed issues
+Net new issues (created − closed)
+
+B) Responsiveness & support health
+
+
+How quickly does the team respond?
+How long do issues stay open?
+Are users waiting too long?
+
+Metrics
+
+Median / P90 time to first response (needs comments endpoint later)
+Time to close
+% issues closed within X days
+Issue backlog (open issues over time)
+
+C) Issue quality & categorization (via labels)
+
+What kinds of problems are users reporting?
+Are bugs dominating vs questions?
+Which areas of the product are unstable?
+
+Metrics
+
+Issue count by label
+% of issues labeled “bug”
+Top recurring labels over time
+Label trend analysis (e.g., “sql”, “cloud”, “datasource”)
+This is where dim_label really shines.
+
+
+D) Community vs internal contribution
+
+Are issues coming from maintainers or users?
+Is the community engaged or mostly silent?
+Are bots dominating activity?
+
+Metrics
+
+Issues by user type (User / Bot / Member)
+% of issues opened by first-time contributors
+Dependabot vs human issues
+This comes directly from dim_user.
+
+
+E) Product risk & stability signals
+
+Are issues reopening?
+Are certain issues never closed?
+Is there a growing unresolved backlog?
+
+Metrics
+
+Reopen rate
+Oldest open issue
+Age distribution of open issues
+% issues still open after 30 / 60 / 90 days
+
+
+Dimensions
+
+dim_user
+
+Enables:
+
+Who is creating issues?
+Bot vs human activity
+Repeat vs first-time reporters
+Community size and engagement
+
+dim_repo
+
+Enables:
+Multi-repo comparison (future-proof)
+Issue load per repo
+Repo maturity & stability
+
+dim_label
+
+Enables:
+Issue categorization
+Product area insights
+Trend analysis by problem type
+
+
+Fact table: fact_issue
+
+Grain: one row per issue
+issue_id
+repo_id
+user_id
+issue_number
+state
+created_at
+updated_at
+closed_at
+is_pull_request (false here)
+comment_count
+
+Derived metrics:
+
+time_to_close
+is_open
+issue_age_days
+
+
+--- Authentication : 
+
+
+curl --request GET \
+--url "https://api.github.com/octocat" \
+--header "Authorization: Bearer YOUR-TOKEN" \
+--header "X-GitHub-Api-Version: 2022-11-28"
+
+
+curl --include --request GET \
+--url "https://api.github.com/repos/octocat/Spoon-Knife/issues" \
+--header "Accept: application/vnd.github+json"
+
+
+--- using basic authentiacations : 
+
+
+curl --request POST \
+--url "https://api.github.com/applications/YOUR_CLIENT_ID/token" \
+--user "YOUR_CLIENT_ID:YOUR_CLIENT_SECRET" \
+--header "Accept: application/vnd.github+json" \
+--header "X-GitHub-Api-Version: 2022-11-28" \
+--data '{
+  "access_token": "ACCESS_TOKEN_TO_CHECK"
+}
+
+
+headers = {
+    "Accept": "application/vnd.github+json",
+    "Authorization": f"Bearer {GITHUB_TOKEN}",
+    "X-GitHub-Api-Version": "2022-11-28",
+    "User-Agent": "ronyinc-github-analytics-etl"
+}
+
+
+
+repos to pull :: 
+
+GET /repos/{owner}/{repo}
+
+    id (repo_id)
+
+    node_id
+
+    name, full_name
+
+    owner info (and owner id)
+
+    html_url
+
+    description
+
+    language
+
+    fork, archived, disabled
+
+    created_at, updated_at, pushed_at
+
+    stargazers_count, watchers_count, forks_count, etc.
+
+
+
+
+GET /repos/{owner}/{repo}/issues
+
+
+
+
+
+
+
+
+GET /repos/{owner}/{repo}/labels
+
+GET /repos/{owner}/{repo}/issues/events
+
+GET /repos/{owner}/{repo}/pulls
+
+
+list of all the end points :: 
+
+https://docs.github.com/en/rest/issues/issues?apiVersion=2022-11-28#list-repository-issues 
+
+
+
+You can use a personal access token to make API requests. Additionally,
+ you can authorize a GitHub App or OAuth app, which can then make API requests on your behalf.
+
+generate clients and client secrets : details
+
+
+ Requests made on your behalf by a GitHub App that is owned by a GitHub Enterprise Cloud organization have a higher rate limit of 15,000 requests per hour.
+
+ requests made on your behalf by a OAuth app that is owned or approved by a GitHub Enterprise Cloud organization have a higher rate limit of 15,000 requests 
+ per hour if you are a member of the GitHub Enterprise Cloud organization
+
+In the upper-right corner of any page on GitHub, click your profile picture.
+Navigate to your account settings.
+
+    For an app owned by a personal account, click Settings.
+    For an app owned by an organization:
+        Click Your organizations.
+        To the right of the organization, click Settings.
+
+
+In the left sidebar, click
+Developer settings.
+In the left sidebar, click GitHub Apps or OAuth apps.
+For GitHub Apps, to the right of the GitHub App you want to access, click Edit. For OAuth apps, click the app that you want to access.
+Next to Client ID, you will see the client ID for your app.
+Next to Client secrets, click Generate a new client secret to generate a client secret for your app.
+
+
+-- Rate limiting : 
+
+
+You can use a personal access token to make API requests. Additionally, you can authorize a GitHub App or OAuth app, which can 
+then make API requests on your behalf.
+
+
+ Specifying an API version
+
+ curl --header "X-GitHub-Api-Version:2022-11-28" https://api.github.com/zen 
+
+ You can also create an OAuth token with an OAuth app to access the REST API.
+  However, GitHub recommends that you use a GitHub App instead. GitHub Apps allow more control over the access and permission that the app has.
+
+
+  Github has 2 types of personal access tokens. 
+
+  - fine-grained personal access tokens (recommended by github)
+  - personal access tokens (classic)  
+
+Both fine-grained personal access tokens and personal access tokens (classic) are tied to the user who generated them and 
+will become inactive if the user loses access to the resource.
+
+: details on the two tokens and how to create them. 
+
+https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens 
+
+
+
+------ pagination : 
+
+When inspecting an API response, the first step is to check the Link header.
+If the header contains rel="next", it means the response is paginated and more data exists.
+The URL inside the angle brackets (< >) for rel="next" is the exact next request to make.
+We repeatedly call the rel="next" URL until the response no longer includes rel="next".
+At that point, pagination is complete and we stop making requests.
+
+
+
+
+
+
+----------------------------------- python code to the issues repo 
+
+
+
+
+------------------- update code : 
+
+import requests
+
+def get_next_link(link_header: str | None) -> str | None:
+    """
+    Parse GitHub Link header and return the URL for rel="next" if present.
+    """
+    if not link_header:
+        return None
+
+    # Example:
+    # <https://api.github.com/...&page=2>; rel="next", <...>; rel="last"
+    for part in link_header.split(","):
+        if 'rel="next"' in part:
+            url_part = part.split(";")[0].strip()
+            return url_part.strip("<>")
+
+    return None
+
+
+
+def fetch_all_issues(owner, repo):
+    """
+    Fetch all issues (including PRs — filter later).
+    Uses GitHub Link header pagination.
+    """
+    all_issues = []
+
+    url = f"{BASE_URL}/repos/{owner}/{repo}/issues"
+    params = {
+        "state": "all",
+        "per_page": PER_PAGE,
+    }
+
+    while url:
+        response = requests.get(
+            url,
+            headers=headers,   # ✅ ALWAYS pass headers
+            params=params      # params only on first call
+        )
+        response.raise_for_status()
+
+        data = response.json()
+        all_issues.extend(data)
+
+        print(f"Fetched {len(data)} records, total so far: {len(all_issues)}")
+
+        # Get next page URL (already contains params + cursor)
+        url = get_next_link(response.headers.get("Link"))
+        params = None  # prevent duplication
+
+    return all_issues
