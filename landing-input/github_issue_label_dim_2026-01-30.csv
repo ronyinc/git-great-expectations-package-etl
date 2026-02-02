@@ -1,0 +1,57 @@
+label_id,label_name,label_color,is_default,label_description,extracted_at_utc
+10101733103,pending,aaaaaa,False,,2026-01-30T20:10:14.942391+00:00
+7418418615,feature-request,55C3DC,False,feature request,2026-01-30T20:10:14.942391+00:00
+7440925312,request-for-help,0C4631,False,request for help,2026-01-30T20:10:14.942391+00:00
+1675427655,documentation,fccfb0,True,Issues and PRs related to the GE documentation,2026-01-30T20:10:14.942391+00:00
+688721233,bug,e35c30,True,Bugs bugs bugs!,2026-01-30T20:10:14.942391+00:00
+7550155696,non-fluent-datasource,fbca04,False,,2026-01-30T20:10:14.942391+00:00
+7424477502,point-to-docs,7415D5,False,,2026-01-30T20:10:14.942391+00:00
+7709810534,backlog,6FBDAB,False,,2026-01-30T20:10:14.942391+00:00
+2831990796,stack:mssql,ebf7f1,False,,2026-01-30T20:10:14.942391+00:00
+7364350044,community-supported,fbca04,False,supported by the GX community,2026-01-30T20:10:14.942391+00:00
+7419419004,fix-in-prog,B64E55,False,,2026-01-30T20:10:14.942391+00:00
+6901116375,fluent-datasources,37A060,False,,2026-01-30T20:10:14.942391+00:00
+2272326499,stack:big_query,c2e0c6,False,,2026-01-30T20:10:14.942391+00:00
+2193490196,dependencies,0366d6,False,PR or issue that updates a dependency,2026-01-30T20:10:14.942391+00:00
+2831220927,incomplete-report,CD3237,False,The report does not conform to the bug report template and/or does not not have sufficient info.,2026-01-30T20:10:14.942391+00:00
+2571313834,as-designed,8ceab5,False,,2026-01-30T20:10:14.942391+00:00
+7013958946,aws,B6E959,False,Related to GX usage with AWS,2026-01-30T20:10:14.942391+00:00
+7158843995,pandas_s3,FFFF00,False,Related to the S3 pandas filesystem datasource,2026-01-30T20:10:14.942391+00:00
+2272329621,stack:spark,c2e0c6,False,,2026-01-30T20:10:14.942391+00:00
+2300926473,feature:slack_notification,ebf7f1,False,Issues and PRs related to the Slack notification feature,2026-01-30T20:10:14.942391+00:00
+6895559346,azure,415BF1,False,,2026-01-30T20:10:14.942391+00:00
+4340253305,analytics,4DC689,False,gx internal analytics,2026-01-30T20:10:14.942391+00:00
+2592316100,stack:oracle,ebf7f1,False,,2026-01-30T20:10:14.942391+00:00
+6895554993,redshift,D72504,False,AWS Redshift Related,2026-01-30T20:10:14.942391+00:00
+4397538239,feature:new_backend,741403,False,,2026-01-30T20:10:14.942391+00:00
+2366122500,stack:databricks,ebf7f1,False,,2026-01-30T20:10:14.942391+00:00
+6895831417,query-asset,5EE822,False,Related to use of a FDS QueryAsset,2026-01-30T20:10:14.942391+00:00
+688721236,help wanted,ae4cef,True,Issues we'd love to see community contributions for. Join #contributors-contributing in our Slack!,2026-01-30T20:10:14.942391+00:00
+2356556764,stack:snowflake,ebf7f1,False,,2026-01-30T20:10:14.942391+00:00
+6647650005,databricks-sql,DD243C,False,DatabricksSQL related,2026-01-30T20:10:14.942391+00:00
+3723271242,feature,6626C7,False,,2026-01-30T20:10:14.942391+00:00
+4397523265,feature:integration,61C1F1,False,,2026-01-30T20:10:14.942391+00:00
+6901113590,block-style-datasource,ADCD22,False,Issue involving a deprecated block-style datasource,2026-01-30T20:10:14.942391+00:00
+688721234,duplicate,cccccc,True,,2026-01-30T20:10:14.942391+00:00
+3130189879,DevRel Triage,D93F0B,False,,2026-01-30T20:10:14.942391+00:00
+5710436171,feature:s3_datasources,80C3BA,False,,2026-01-30T20:10:14.942391+00:00
+3205121967,community,2FF5F2,False,,2026-01-30T20:10:14.942391+00:00
+2325051803,stack:mysql,ebf7f1,False,,2026-01-30T20:10:14.942391+00:00
+3205989759,devrel,A8C4C9,False,This item is being addressed by the Developer Relations Team,2026-01-30T20:10:14.942391+00:00
+3880359478,discussion,55F088,False,All items that are inside of Discussions,2026-01-30T20:10:14.942391+00:00
+4391178824,feature:optimization,5CA71F,False,,2026-01-30T20:10:14.942391+00:00
+2303268925,triage,ffd942,False,Used by the GE core team to flag issues that were not yet triaged,2026-01-30T20:10:14.942391+00:00
+4395587605,community-action-needed,EB9EE5,False,,2026-01-30T20:10:14.942391+00:00
+4798646779,feature:authentication,C63E2E,False,,2026-01-30T20:10:14.942391+00:00
+6299997269,bounty-board,fbca04,False,An Issue selected for the GX Bounty Board.,2026-01-30T20:10:14.942391+00:00
+3205982396,core-engineering-queue,474051,False,,2026-01-30T20:10:14.942391+00:00
+688721237,good first issue,7057ff,True,Good issues for new contributors. Join #contributors-contributing in our Slack for help!,2026-01-30T20:10:14.942391+00:00
+3815245640,maintenance,AE61B8,False,,2026-01-30T20:10:14.942391+00:00
+2843992198,troubleshooting,0B42D0,False,,2026-01-30T20:10:14.942391+00:00
+1901311827,stale,f9c8a7,False,Stale issues and PRs,2026-01-30T20:10:14.942391+00:00
+2846239327,in investigation,D93F0B,False,We are discussing the issue with the poster in order to get more details and reproduce it.,2026-01-30T20:10:14.942391+00:00
+2367960808,core-team-priority,a6fc6c,False,,2026-01-30T20:10:14.942391+00:00
+2727204804,in-progress,E49DAF,False,,2026-01-30T20:10:14.942391+00:00
+2300538776,feature:data_docs,ebf7f1,False,Issues and PR related to Data Docs,2026-01-30T20:10:14.942391+00:00
+2366193763,blocker bug,f5050d,False,A bug that blocks a user from completing a use case,2026-01-30T20:10:14.942391+00:00
+688721235,enhancement,84b6eb,True,,2026-01-30T20:10:14.942391+00:00

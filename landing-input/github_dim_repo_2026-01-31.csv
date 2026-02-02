@@ -1,0 +1,2 @@
+repo_id,repo_node_id,name,owner_user_id,private,fork,archived,disabled,created_at,updated_at,pushed_at,default_branch,language,stargazers_count,watchers_count,forks_count,open_issues_count,extracted_at_utc
+103071520,MDEwOlJlcG9zaXRvcnkxMDMwNzE1MjA=,great-expectations/great_expectations,31670619,False,False,False,False,2017-09-11T00:18:46Z,2026-01-31T01:24:46Z,2026-01-30T23:53:07Z,develop,Python,11106,11106,1673,84,2026-02-01T06:19:58.816677+00:00
