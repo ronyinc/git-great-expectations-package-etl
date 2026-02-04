@@ -1,21 +1,35 @@
+from __future__ import annotations
+
 import requests
 import json
+import os
+from pathlib import Path
 import pandas as pd
+
 from datetime import date, timedelta, datetime, timezone
+from airflow.decorators import dag, task
 from pathlib import Path
 
-import os
-from dotenv import load_dotenv
+# --- Config -----
 
-load_dotenv(dotenv_path="./.env")
-
-API_KEY = os.getenv("API_KEY")
 OWNER = "great-expectations"
 REPO = "great_expectations"
 REPO_FULL_NAME = f"{OWNER}/{REPO}"
 PER_PAGE = 100
-
 BASE_URL = "https://api.github.com"
+
+API_KEY_ENV_NAME = "GITHUB_API_KEY"
+API_KEY = os.getenv(API_KEY_ENV_NAME)
+
+
+if not API_KEY:
+    raise ValueError(f"Missing {API_KEY_ENV_NAME} env var")
+
+
+LANDING_DIR = Path("/opt/spark-apps/git-great-expectations-package-etl/landing-input")
+LANDING_DIR.mkdir(parents=True, exist_ok=True)
+
+
 
 headers = {
     "Accept": "application/vnd.github+json",
@@ -57,18 +71,13 @@ def fetch_all_issues(repo, owner):
                  headers=headers,
                  timeout=30
             )
-
             response.raise_for_status()
-            # data = response.json()
             data = [ x for x in response.json() if "pull_request" not in x]
             all_issues.extend(data)
 
             print(f"Fetched {len(data)} records. Total we have {len(all_issues)}")
 
             url = get_next_link(response.headers.get("Link"))
-            # print(f"url link for the next page {url}")
-
-            # url = response.links.get("next", {}).get("url") -- built in link parsing in the request module
 
             params = None
 
@@ -112,8 +121,6 @@ def fetch_repo_info(repo, owner):
             "watchers_count" : data["watchers_count"],
             "forks_count" : data["forks_count"],
             "open_issues_count" : data["open_issues_count"]
-
-
         }
 
         repo_info.append(dim_repo)
@@ -121,19 +128,12 @@ def fetch_repo_info(repo, owner):
         df_repo = pd.DataFrame(repo_info)
         df_repo["extracted_at_utc"] = datetime.now(timezone.utc).isoformat()
 
-        output_dir = "./landing-input"
-        os.makedirs(output_dir, exist_ok=True)
-
-        file_path_dim_repo = os.path.join(output_dir, f"github_dim_repo_{date.today()}.csv")
-        df_repo.to_csv(file_path_dim_repo, index=False, encoding="utf-8")
-
+        return df_repo
 
     except requests.exceptions.RequestException as e:
         raise e 
 
-
-
-def parse_issue_data_to_csv(data):
+def parse_issue_data_to_csv(data: list[dict]):
 
     dim_user_list = []
     label_info = []
@@ -183,9 +183,7 @@ def parse_issue_data_to_csv(data):
                 "user_id" : issue["user"]["id"],
                 "state" : issue["state"],
                 "locked" : issue["locked"],
-                # "assignee" : issue["assignees"],
                 "assignee_count" : len(issue["assignees"]),
-                # "labels" : issue["labels"],
                 "label_count" : len(issue["labels"]),
                 "milestone" : issue["milestone"],
                 "comments" : issue["comments"],
@@ -214,8 +212,6 @@ def parse_issue_data_to_csv(data):
                 "label_name" : item["name"],
                 "label_color" : item["color"],
                 "is_default" : item["default"],
-                # "created_at" : item["created_at"],
-                # "updated_at" : item["updated_at"],
                 "label_description" : item["description"]
                 }
                 label_info.append(dim_label)
@@ -240,46 +236,92 @@ def parse_issue_data_to_csv(data):
         df_bridge_issue_label["extracted_at_utc"] =  datetime.now(timezone.utc).isoformat()        
 
 
-        output_dir = "./landing-input"
+        output_dir = "/opt/spark-apps/git-great-expectations-package-etl/landing-input"
 
-        os.makedirs(output_dir, exist_ok=True)
-        
-        file_path_dim_user = os.path.join(output_dir, f"github_dim_user_{date.today()}.csv")
-        file_path_issue_fact = os.path.join(output_dir, f"github_issue_fact_{date.today()}.csv")
-        file_path_issue_label_dim = os.path.join(output_dir, f"github_issue_label_dim_{date.today()}.csv")
-        file_path_issue_label_bridge = os.path.join(output_dir, f"github_issue_label_bridge_{date.today()}.csv")
-
-        df_user.to_csv(file_path_dim_user, index=False, encoding="utf-8")
-        df_issue_fact.to_csv(file_path_issue_fact, index=False, encoding="utf-8")
-        df_issue_label.to_csv(file_path_issue_label_dim, index=False, encoding="utf-8")
-        df_bridge_issue_label.to_csv(file_path_issue_label_bridge, index=False, encoding="utf-8")
-        # print(df)
+        return df_user, df_issue_fact, df_issue_label, df_bridge_issue_label
 
     except requests.exceptions.RequestException as e:
         raise e 
 
+@dag(
+    dag_id="github-great-expectations-package-api-etl-01",
+    description="Run github-great-expectations-package pipeline using existing functions, manual trigger.",
+    start_date=datetime(2026, 1, 1),
+    schedule=None,
+    catchup=False,
+    tags=["github-great-expectations-package", "api", "csv"]
+)
 
-if __name__ == "__main__":
+def github_great_expectations_api_etl():
 
-    issues_list = fetch_all_issues(REPO, OWNER)
+    @task
+    def t_fetch_repo_info():
+        df_repo = fetch_repo_info(REPO, OWNER)
+        out = LANDING_DIR / f"github_dim_repo_{date.today().isoformat()}.csv"
+        df_repo.to_csv(out, index=False, encoding="utf-8")
+ 
+    @task
+    def t_fetch_all_issues_to_json() -> str:
+        issues = fetch_all_issues(REPO, OWNER)
+        out = LANDING_DIR / f"github_issues_raw_{date.today().isoformat()}.json"
+        out.write_text(json.dumps(issues), encoding="utf-8")
+        return str(out)    # the path is storeded in XCom variable 
 
-    parse_issue_data_to_csv(issues_list)
+    @task
+    def t_parse_issue_data_to_csv(raw_json_path: str) -> dict:
+        data = json.loads(Path(raw_json_path).read_text(encoding="utf-8"))
+        df_user, df_issue_fact, df_label, df_bridge = parse_issue_data_to_csv(data)
 
-    fetch_repo_info(REPO, OWNER)
+        paths = {
+            "dim_user": str(LANDING_DIR / f"github_dim_user_{date.today().isoformat()}.csv"),
+            "fact_issue": str(LANDING_DIR / f"github_issue_fact_{date.today().isoformat()}.csv"),
+            "dim_label": str(LANDING_DIR / f"github_issue_label_dim_{date.today().isoformat()}.csv"),
+            "bridge_issue_label": str(LANDING_DIR / f"github_issue_label_bridge_{date.today().isoformat()}.csv"),
+        }
+
+        df_user.to_csv(paths["dim_user"], index=False, encoding="utf-8")
+        df_issue_fact.to_csv(paths["fact_issue"], index=False, encoding="utf-8")
+        df_label.to_csv(paths["dim_label"], index=False, encoding="utf-8")
+        df_bridge.to_csv(paths["bridge_issue_label"], index=False, encoding="utf-8")
+
+        return paths
+
+    repo_path = t_fetch_repo_info()
+    raw_path = t_fetch_all_issues_to_json()
+    extracted_paths = t_parse_issue_data_to_csv(raw_path)
+
+
+github_great_expectations_api_etl()
 
 
 
-    # print(issues_list[0]["labels"][0])
-    
-    # output_dir = Path(r"C:\pyspark\spark-apps\git-great-expectations-package-etl\landing-input")
-    # output_dir.mkdir(parents=True, exist_ok=True)
-    # output_file = output_dir / "github_issues.json"
 
-    # with open(output_file, "w", encoding="utf-8") as f:
-    #     json.dump(issues_list, f, indent=2, ensure_ascii=False)
 
-    # print(f"JSON written to: {output_file}")    
+# In this Airflow DAG, large API data is not passed directly between tasks; instead, it is written to disk and only the file path is shared using XCom.
+# In the task t_fetch_all_issues_to_json, the GitHub issues are fetched as a Python list[dict], converted into a JSON string using json.dumps(), 
+# and written to a file using Path.write_text().#  The task then returns the file path as a string, which Airflow automatically stores in XCom.
+# 
+# json.dumps()
+# Python object → JSON string
+# json.dump() Python object → write directly to file
 
+# Python object → JSON string → write_text()
+
+
+# The downstream task t_parse_issue_data_to_csv receives this path as an input parameter, reads the file back into memory using
+# Path(raw_json_path).read_text(), and converts the JSON string back into Python objects using json.loads(). 
+
+# JSON file on disk
+#         ↓ read_text()
+# JSON string
+#         ↓ json.loads()
+# Python list[dict]
+
+
+# This pattern separates the data plane (files on disk containing large payloads) from the control plane 
+# (small metadata like paths passed via XCom), which is a best practice in Airflow to avoid storing large datasets in the metadata database. 
+# Conceptually, the flow becomes: API → raw JSON file → parsed DataFrames → structured CSV outputs, making the pipeline scalable, retry-safe,
+# and easy to debug.
 
 
 
