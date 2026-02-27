@@ -420,6 +420,65 @@ def load_fact_issues():
         conn.execute(text(insert_sql))
         conn.execute(text(update_sql))
 
+def load_dim_repo_scd2():
+    """SCD2 for repo based on changes in name, private, language, watchers_count, forks_count, open_issues_count,stargazers_count"""
+
+    engine = get_engine()
+
+    scd2_table = f"{TARGET_SCHEMA}.{TARGET_TABLE_REPO}_scd2"
+    src_table = f"{TARGET_SCHEMA}.{TARGET_TABLE_REPO}"
+
+    close_sql = f"""
+    UPDATE {scd2_table} d
+    SET
+       valid_to_ts = s.extracted_at_utc,
+       is_current = FALSE
+    FROM {src_table} s
+    WHERE d.repo_id = s.repo_id AND d.is_current = TRUE
+    AND (
+        d."name" is distinct from s."name" OR 
+        d."private" is distinct from s."private" OR
+        d."language" is distinct from s."language" OR
+        d.watchers_count IS DISTINCT FROM s.watchers_count OR
+        d.forks_count IS DISTINCT FROM s.forks_count OR
+        d.open_issues_count IS DISTINCT FROM s.open_issues_count OR
+        d.stargazers_count IS DISTINCT FROM s.stargazers_count
+
+    );
+
+    """
+    insert_sql = f"""
+  
+    INSERT INTO {scd2_table} (
+       repo_id, repo_node_id, "name", owner_user_id, private, fork, archived, disabled,
+      created_at, updated_at, pushed_at, default_branch, "language",
+      stargazers_count, watchers_count, forks_count, open_issues_count,
+      extracted_at_utc,
+      valid_from_ts, valid_to_ts, is_current
+    )
+
+    SELECT 
+        s.repo_id, s.repo_node_id, s."name", s.owner_user_id, s.private, s.fork, s.archived, s.disabled,
+        s.created_at, s.updated_at, s.pushed_at, s.default_branch, s."language",
+        s.stargazers_count, s.watchers_count, s.forks_count, s.open_issues_count,
+        s.extracted_at_utc,
+        s.extracted_at_utc AS valid_from_ts,
+        NULL as valid_to_ts,
+        TRUE AS is_current
+    FROM
+         {src_table} s
+    LEFT JOIN 
+              {scd2_table} d 
+     on d.repo_id = s.repo_id and d.is_current = TRUE
+     WHERE d.repo_id is NULL;       
+
+    """
+
+    with engine.begin() as conn:
+        conn.execute(text(close_sql))
+        conn.execute(text(insert_sql))
+
+
 
 def drop_tmp_table():
 
@@ -439,10 +498,7 @@ with DAG(
     t2 = PythonOperator(task_id="create_dim_label", python_callable=load_dim_label)
     t3 = PythonOperator(task_id="create_dim_repo", python_callable=load_dim_repo)
     t4 = PythonOperator(task_id="create_fact_issues", python_callable=load_fact_issues)
-    t5 = PythonOperator(task_id="delete_tmp_table", python_callable=drop_tmp_table)        
+    t5 = PythonOperator(task_id="create_update_repo_scd2", python_callable=load_dim_repo_scd2)
+    t6 = PythonOperator(task_id="delete_tmp_table", python_callable=drop_tmp_table)        
 
-    t1 >> t2 >> t3 >> t4 >> t5
-
-
-
-
+    t1 >> t2 >> t3 >> t4 >> t5 >> t6
